@@ -17,29 +17,34 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import axios from "axios"; // Make sure axios is installed
+import axios from "axios";
 
-
-const API_URL =   "http://localhost:5000";
-
+const API_URL = "http://localhost:5000";
 
 const menuItems = [
   { title: "Home", path: "/" },
-  { title: "Products", path: "/products-page" },
+  { title: "Products", path: "/products" },
   { title: "Cart", path: "/cart" },
 ];
-
 
 function NavListMenu() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  const handleMenuItemClick = (path) => {
+    navigate(path);
+    setIsMenuOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <Menu
       open={isMenuOpen}
       handler={setIsMenuOpen}
-      dismiss={{ outsidePress: false }}
+      dismiss={{ outsidePress: true }}
     >
       <MenuHandler>
         <Typography as="div" variant="small" className="font-medium">
@@ -61,19 +66,24 @@ function NavListMenu() {
         </Typography>
       </MenuHandler>
       <MenuList
-        className="rounded-xl"
+        className="rounded-xl shadow-lg"
         onMouseEnter={() => setIsMenuOpen(true)}
         onMouseLeave={() => setIsMenuOpen(false)}
       >
-        <MenuItem><Link to="/products-page">Products</Link></MenuItem>
-        <MenuItem><Link to="/bundles">Bundles</Link></MenuItem>
+        <MenuItem onClick={() => handleMenuItemClick("/products")}>Products</MenuItem>
+        <MenuItem onClick={() => handleMenuItemClick("/bundles")}>Bundles</MenuItem>
       </MenuList>
     </Menu>
   );
 }
 
-
 function NavList() {
+  const navigate = useNavigate();
+  
+  const handleNavItemClick = (path) => {
+    navigate(path);
+  };
+
   return (
     <List className="mb-6 mt-4 p-0 lg:mb-0 lg:mt-0 lg:flex-row lg:p-1">
       {menuItems.map(({ title, path }, key) => (
@@ -87,11 +97,12 @@ function NavList() {
           {title === "Products" ? (
             <NavListMenu />
           ) : (
-            <Link to={path}>
-              <ListItem className="flex items-center gap-2 py-2 pr-4">
-                {title}
-              </ListItem>
-            </Link>
+            <ListItem 
+              className="flex items-center gap-2 py-2 pr-4 hover:bg-gray-100 transition-colors rounded cursor-pointer"
+              onClick={() => handleNavItemClick(path)}
+            >
+              {title}
+            </ListItem>
           )}
         </Typography>
       ))}
@@ -99,15 +110,14 @@ function NavList() {
   );
 }
 
-
 export function NavbarMenu() {
   const [openNav, setOpenNav] = React.useState(false);
   const { user, isAuthenticated, loginWithRedirect, logout } = useAuth0();
   const [dbUser, setDbUser] = useState(null);
- 
+  const navigate = useNavigate();
+
   // Generate a simple user ID if authenticated using Auth0's sub
   const userId = isAuthenticated ? `user_${user?.sub?.split('|')[1] || Math.random().toString(36).substring(2, 10)}` : null;
-
 
   useEffect(() => {
     window.addEventListener(
@@ -116,11 +126,8 @@ export function NavbarMenu() {
     );
   }, []);
 
-
   // Save user to database after authentication
- // Inside your NavbarMenu component, modify the useEffect that saves the user to the database
-
-useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && user) {
       const saveUserToDatabase = async () => {
         try {
@@ -131,23 +138,19 @@ useEffect(() => {
             email: user.email,
             picture: user.picture
           };
-          
           // Send to backend
           const response = await axios.post(`${API_URL}/api/users`, userData);
           console.log('User saved to database:', response.data);
           setDbUser(response.data.user);
-          
           // Save the crucial user information to localStorage
           localStorage.setItem("userId", userId);
           localStorage.setItem("userEmail", user.email);
           localStorage.setItem("userName", user.name);
-          
           console.log('User info saved to localStorage');
         } catch (error) {
           console.error('Error saving user to database:', error);
         }
       };
-      
       saveUserToDatabase();
     } else {
       // Clear localStorage when logged out
@@ -157,15 +160,17 @@ useEffect(() => {
     }
   }, [isAuthenticated, user, userId]);
 
+  const handleLogoClick = () => {
+    navigate("/");
+  };
 
   return (
-    <Navbar className="mx-auto px-4 py-2 ">
+    <Navbar className="mx-auto px-4 py-2 shadow-md">
       <div className="flex items-center justify-between text-gray-900">
         <Typography
-          as={Link}
-          to="/"
           variant="h6"
           className="mr-4 cursor-pointer py-1.5 lg:ml-2"
+          onClick={handleLogoClick}
         >
           FarmBasket
         </Typography>
@@ -182,6 +187,7 @@ useEffect(() => {
               <Button
                 variant="outlined"
                 size="sm"
+                className="shadow-sm hover:shadow"
                 onClick={() => logout({ returnTo: window.location.origin })}
               >
                 Log Out
@@ -191,6 +197,7 @@ useEffect(() => {
             <>
               <Button
                 size="sm"
+                className="shadow-sm hover:shadow"
                 onClick={() => loginWithRedirect({ screen_hint: 'signup' })}
               >
                 Sign Up
@@ -198,6 +205,7 @@ useEffect(() => {
               <Button
                 variant="outlined"
                 size="sm"
+                className="shadow-sm hover:shadow"
                 onClick={() => loginWithRedirect()}
               >
                 Log In
@@ -230,6 +238,7 @@ useEffect(() => {
                 variant="outlined"
                 size="sm"
                 fullWidth
+                className="shadow-sm"
                 onClick={() => logout({ returnTo: window.location.origin })}
               >
                 Log Out
@@ -240,6 +249,7 @@ useEffect(() => {
               <Button
                 size="sm"
                 fullWidth
+                className="shadow-sm"
                 onClick={() => loginWithRedirect({ screen_hint: 'signup' })}
               >
                 Sign Up
@@ -248,6 +258,7 @@ useEffect(() => {
                 variant="outlined"
                 size="sm"
                 fullWidth
+                className="shadow-sm"
                 onClick={() => loginWithRedirect()}
               >
                 Log In
