@@ -33,14 +33,21 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
     // Start with all products
     let result = [...products];
     
-    // Apply search filter
+    // Enhanced search filter to search through all properties
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(product => 
-        product.name.toLowerCase().includes(query) || 
-        (product.description && product.description.toLowerCase().includes(query)) ||
-        (product.category && product.category.toLowerCase().includes(query))
-      );
+      result = result.filter(product => {
+        // Convert product to string for easy searching across all fields
+        const productStr = JSON.stringify(product).toLowerCase();
+        return productStr.includes(query) || 
+          // Explicit checks for common fields
+          (product.name && product.name.toLowerCase().includes(query)) ||
+          (product.description && product.description.toLowerCase().includes(query)) ||
+          (product.category && product.category.toLowerCase().includes(query)) ||
+          (product.location && product.location.toLowerCase().includes(query)) ||
+          // Convert price to string and check
+          (product.price !== undefined && product.price.toString().includes(query));
+      });
     }
     
     // Apply location filter
@@ -49,7 +56,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         product.location && product.location.includes(filters.location)
       );
     }
-    
+
     // Apply price range filter
     if (filters.priceRange && filters.priceRange.length === 2) {
       const [min, max] = filters.priceRange;
@@ -57,7 +64,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         product.price >= min && product.price <= max
       );
     }
-    
+
     // Apply customer rating filter
     if (filters.customerRating && filters.customerRating.length > 0) {
       const minRating = Math.min(...filters.customerRating);
@@ -65,7 +72,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         product.rating >= minRating
       );
     }
-    
+
     // Apply delivery time filter
     if (filters.deliveryTime && filters.deliveryTime.length > 0) {
       result = result.filter(product => {
@@ -80,7 +87,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         );
       });
     }
-    
+
     // Apply payment options filter
     if (filters.paymentOptions && filters.paymentOptions.length > 0) {
       result = result.filter(product =>
@@ -89,7 +96,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         )
       );
     }
-    
+
     // Apply sorting
     if (sortOption) {
       switch (sortOption) {
@@ -120,13 +127,14 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
 
   // Determine the effective userId to use
   const effectiveUserId = propUserId || localUserId;
-
+  
   // Function to add product to cart
   const addToCart = (product) => {
     if (!effectiveUserId) {
       alert("Please log in to add items to cart");
       return;
     }
+    
     const cartItem = {
       userId: effectiveUserId,
       farmerId: product.farmerId,
@@ -136,10 +144,11 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
       image: product.image,
       quantity: 1, // Add quantity for cart functionality
     };
+    
     console.log("Adding to cart with userId:", effectiveUserId);
     setCart((prevCart) => [...prevCart, cartItem]);
   };
-
+  
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
@@ -227,7 +236,9 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
               {product.rating && (
                 <div className="flex mt-1">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}>★</span>
+                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}>
+                      ★
+                    </span>
                   ))}
                   <span className="ml-1 text-sm">({product.rating})</span>
                 </div>
