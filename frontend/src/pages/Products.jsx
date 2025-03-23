@@ -1,28 +1,203 @@
 // pages/Products.jsx
 import { useEffect, useState } from "react";
 import Cart from "../components/Cart";
+import { MapPin, Heart, Share, User } from "lucide-react";
 
-const Products = ({ 
-  userId: propUserId, 
-  filters = {}, 
-  searchQuery = '', 
+// ProductCard Component
+const ProductCard = ({ product, effectiveUserId, addToCart, setActiveCategory }) => {
+  const [isLiked, setIsLiked] = useState(false);
+  
+  const handleLikeClick = (e) => {
+    e.stopPropagation();
+    setIsLiked(!isLiked);
+  };
+
+  const handleShareClick = (e) => {
+    e.stopPropagation();
+    console.log("Sharing product:", product.name);
+  };
+
+  const handleFarmerProfileClick = (e) => {
+    e.stopPropagation();
+    console.log("Opening farmer profile for:", product.farmerName, "with ID:", product.farmerId);
+    window.open(`/farmer-profile/${product.farmerId}`, "_blank");
+  };
+
+  const handleCategoryClick = (e) => {
+    e.stopPropagation();
+    if (setActiveCategory && product.category) {
+      setActiveCategory(product.category);
+    }
+  };
+
+  return (
+    <div className="flex flex-col bg-gray-50 rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+      {/* Header - Crop Name with dark background */}
+      <div className="p-3 border-b border-gray-100 bg-gray-900 flex justify-between items-center">
+        <h3 className="font-bold text-white truncate">{product.cropName || product.name}</h3>
+      </div>
+      
+      {/* Product Image */}
+      <div className="relative w-full h-52 bg-gray-200 flex items-center justify-center p-3">
+        <div className="relative w-full h-full overflow-hidden border border-gray-900 rounded-lg p-1">
+          <img
+            src={product.image || "https://res.cloudinary.com/john-mantas/image/upload/v1537291846/codepen/delicious-apples/green-apple-with-slice.png"}
+            alt={product.cropName || product.name}
+            className="w-full h-full object-contain transition-transform duration-700 hover:scale-105"
+          />
+        </div>
+      </div>
+      
+      {/* Product Details */}
+      <div className="p-4 flex flex-col bg-gray-200">
+        {/* Action Buttons */}
+        <div className="flex justify-between mb-3">
+          <div className="flex">
+            <button onClick={handleLikeClick} className="mr-4 hover:scale-110 transition-transform">
+              <Heart
+                size={22}
+                stroke={isLiked ? "#d95552" : "#555"}
+                fill={isLiked ? "#d95552" : "none"}
+                className="transition-colors duration-300"
+              />
+            </button>
+            <button onClick={handleShareClick} className="mr-4 hover:scale-110 transition-transform">
+              <Share
+                size={22}
+                stroke="#555"
+                className="transition-colors duration-300 hover:stroke-gray-700"
+              />
+            </button>
+          </div>
+          
+          {/* Farmer Profile Button */}
+          <button
+            onClick={handleFarmerProfileClick}
+            className="hover:scale-110 transition-transform relative group"
+          >
+            <User
+              size={22}
+              stroke="#555"
+              className="transition-colors duration-300 hover:stroke-gray-700"
+            />
+            <span className="absolute -top-8 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              View Farmer: {product.farmerName || "Unknown"}
+            </span>
+          </button>
+        </div>
+        
+        {/* Category Button */}
+        <span
+          onClick={handleCategoryClick}
+          className="inline-block bg-gradient-to-r from-gray-300 to-gray-300 rounded-full px-3 py-1 text-sm font-medium text-gray-900 mb-3 w-fit cursor-pointer hover:from-gray-400 hover:to-gray-400 transition-all duration-300"
+        >
+          {product.category || "Other"}
+        </span>
+        
+        {/* Location */}
+        <div className="flex items-center text-gray-500 text-sm mb-4">
+          <MapPin size={14} className="mr-1 text-gray-400" />
+          <span className="truncate">{product.location || "Unknown Location"}</span>
+        </div>
+        
+        {/* Stock and Delivery Info */}
+        <div className="text-gray-600 text-sm space-y-2 mb-4">
+          <p>Stock: {product.stock || 0}</p>
+          <p>Estimated Delivery: {product.estimatedDeliveryTime || "Unknown"}</p>
+        </div>
+        
+        {/* Price and Add to Cart Button */}
+        <div className="flex justify-between items-center px-4 py-3 bg-gray-900 mt-2 -mx-4 -mb-4 rounded-b-xl">
+          <div className="text-white font-sans">
+            <span className="text-lg font-light">₹</span>
+            <span className="text-2xl font-semibold ml-0.5">{product.price}</span>
+          </div>
+          <button
+            onClick={() => addToCart(product)}
+            className={`px-4 py-1.5 bg-blue-900 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow text-sm`}
+            disabled={!effectiveUserId}
+          >
+            {effectiveUserId ? "Add to Cart" : "Login to Add"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Products Component
+const Products = ({
+  userId: propUserId,
+  filters = {},
+  searchQuery = '',
   sortOption = 'popular',
-  category = 'all' 
+  category = 'all'
 }) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [localUserId, setLocalUserId] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(category);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+
 
   // Fetch products on component mount
   useEffect(() => {
+    setLoading(true);
+    console.log("Fetching products...");
+    
     fetch("http://localhost:5000/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(data);
-        setFilteredProducts(data); // Initialize filtered products with all products
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Error fetching products: ${res.status}`);
+        }
+        return res.json();
       })
-      .catch((err) => console.error("Error fetching products:", err));
+      .then((data) => {
+        console.log("API Response:", data);
+        
+        // Handle direct array of products
+        if (Array.isArray(data)) {
+          // If the API returns an array of farmer objects with works arrays
+          let allProducts = [];
+          
+          data.forEach(farmerData => {
+            if (farmerData.works && Array.isArray(farmerData.works)) {
+              // Extract each work item as a product with farmer info
+              farmerData.works.forEach(workItem => {
+                allProducts.push({
+                  ...workItem,
+                  farmerName: farmerData.farmerName,
+                  farmerId: farmerData._id,
+                  phoneNumber: farmerData.phoneNumber,
+                  name: workItem.cropName, // Ensure we have a name property
+                  // Add any default values or transformations needed
+                  rating: Math.floor(Math.random() * 5) + 1 // Example random rating
+                });
+              });
+            } else {
+              // If it's a direct product object
+              allProducts.push(farmerData);
+            }
+          });
+          
+          console.log("Transformed products:", allProducts);
+          setProducts(allProducts);
+          setFilteredProducts(allProducts);
+        } else {
+          console.error("Unexpected API response format:", data);
+          setError("Unexpected data format from API");
+        }
+        
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
   // Get userId from localStorage if not passed as prop
@@ -30,23 +205,30 @@ const Products = ({
     const storedUserId = localStorage.getItem("userId");
     console.log("Products component - userId from localStorage:", storedUserId);
     setLocalUserId(storedUserId);
-  }, [propUserId]); // Re-check when prop userId changes
+  }, [propUserId]);
 
   // Apply filters, search, sort, and category when they change
   useEffect(() => {
     if (products.length === 0) return;
+    
+    console.log("Filtering products with:", { 
+      category, 
+      searchQuery, 
+      filters, 
+      sortOption 
+    });
     
     // Start with all products
     let result = [...products];
     
     // Apply category filter
     if (category && category !== 'all') {
-      result = result.filter(product => 
-        product.category && 
+      result = result.filter(product =>
+        product.category &&
         product.category.toLowerCase() === category.toLowerCase()
       );
     }
-
+    
     // Enhanced search filter to search through all properties
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -56,6 +238,7 @@ const Products = ({
         return productStr.includes(query) ||
           // Explicit checks for common fields
           (product.name && product.name.toLowerCase().includes(query)) ||
+          (product.cropName && product.cropName.toLowerCase().includes(query)) ||
           (product.description && product.description.toLowerCase().includes(query)) ||
           (product.category && product.category.toLowerCase().includes(query)) ||
           (product.location && product.location.toLowerCase().includes(query)) ||
@@ -63,14 +246,14 @@ const Products = ({
           (product.price !== undefined && product.price.toString().includes(query));
       });
     }
-
+    
     // Apply location filter
     if (filters.location) {
       result = result.filter(product =>
         product.location && product.location.includes(filters.location)
       );
     }
-
+    
     // Apply price range filter
     if (filters.priceRange && filters.priceRange.length === 2) {
       const [min, max] = filters.priceRange;
@@ -78,7 +261,7 @@ const Products = ({
         product.price >= min && product.price <= max
       );
     }
-
+    
     // Apply customer rating filter
     if (filters.customerRating && filters.customerRating.length > 0) {
       const minRating = Math.min(...filters.customerRating);
@@ -86,14 +269,14 @@ const Products = ({
         product.rating >= minRating
       );
     }
-
+    
     // Apply delivery time filter
     if (filters.deliveryTime && filters.deliveryTime.length > 0) {
       result = result.filter(product => {
-        if (!product.estimatedDelivery) return true;
-        const deliveryDays = typeof product.estimatedDelivery === 'number'
-          ? product.estimatedDelivery
-          : parseInt(product.estimatedDelivery.split(' ')[0]) || 0;
+        if (!product.estimatedDeliveryTime) return true;
+        const deliveryDays = typeof product.estimatedDeliveryTime === 'number'
+          ? product.estimatedDeliveryTime
+          : parseInt(product.estimatedDeliveryTime.split(' ')[0]) || 0;
         return (
           (filters.deliveryTime.includes("next_day") && deliveryDays <= 1) ||
           (filters.deliveryTime.includes("2-3_days") && deliveryDays >= 2 && deliveryDays <= 3) ||
@@ -101,7 +284,7 @@ const Products = ({
         );
       });
     }
-
+    
     // Apply payment options filter
     if (filters.paymentOptions && filters.paymentOptions.length > 0) {
       result = result.filter(product =>
@@ -110,7 +293,7 @@ const Products = ({
         )
       );
     }
-
+    
     // Apply sorting
     if (sortOption) {
       switch (sortOption) {
@@ -135,7 +318,8 @@ const Products = ({
           break;
       }
     }
-
+    
+    console.log("Filtered products count:", result.length);
     setFilteredProducts(result);
   }, [filters, products, searchQuery, sortOption, category]);
 
@@ -148,20 +332,57 @@ const Products = ({
       alert("Please log in to add items to cart");
       return;
     }
-
+    
     const cartItem = {
       userId: effectiveUserId,
       farmerId: product.farmerId,
-      productId: product._id || product.id, // Make sure to use the correct ID field
-      name: product.name,
+      productId: product._id, 
+      name: product.cropName || product.name,
       price: product.price,
       image: product.image,
       quantity: 1, // Add quantity for cart functionality
     };
-
-    console.log("Adding to cart with userId:", effectiveUserId);
+    
+    console.log("Adding to cart:", cartItem);
     setCart((prevCart) => [...prevCart, cartItem]);
   };
+
+  // Handle category change
+  const handleCategoryChange = (newCategory) => {
+    setActiveCategory(newCategory.toLowerCase());
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="p-4">
+        <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="ml-4 text-gray-500">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-4">
+        <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -171,21 +392,25 @@ const Products = ({
       <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
         <p>User ID: {effectiveUserId || "Not logged in"}</p>
         <p>Cart Items: {cart.length}</p>
+        <p>Products Count: {products.length}</p>
+        <p>Filtered Products: {filteredProducts.length}</p>
         <p>Search Query: {searchQuery || "None"}</p>
         <p>Sort Option: {sortOption}</p>
         <p>Active Category: {category}</p>
         <p>Active Filters: {Object.entries(filters)
-          .filter(([key, value]) =>
-            (Array.isArray(value) && value.length > 0) ||
+          .filter(([key, value]) => 
+            (Array.isArray(value) && value.length > 0) || 
             (!Array.isArray(value) && value)
           )
           .map(([key]) => key)
           .join(', ') || 'None'}</p>
       </div>
+      
 
+      
       {/* Filter Tags */}
-      {Object.entries(filters).some(([key, value]) =>
-        (Array.isArray(value) && value.length > 0) ||
+      {Object.entries(filters).some(([key, value]) => 
+        (Array.isArray(value) && value.length > 0) || 
         (!Array.isArray(value) && value)
       ) && (
         <div className="flex flex-wrap gap-2 mb-4">
@@ -206,26 +431,26 @@ const Products = ({
           )}
           {filters.deliveryTime && filters.deliveryTime.length > 0 && (
             <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
-              Delivery: {filters.deliveryTime.map(dt =>
-                dt === "next_day" ? "Next Day" :
-                dt === "2-3_days" ? "2-3 Days" :
+              Delivery: {filters.deliveryTime.map(dt => 
+                dt === "next_day" ? "Next Day" : 
+                dt === "2-3_days" ? "2-3 Days" : 
                 "4-7 Days"
               ).join(', ')}
             </span>
           )}
           {filters.paymentOptions && filters.paymentOptions.length > 0 && (
             <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
-              Payment: {filters.paymentOptions.map(po =>
-                po === "cod" ? "COD" :
-                po === "online" ? "Online" :
-                po === "upi" ? "UPI" :
+              Payment: {filters.paymentOptions.map(po => 
+                po === "cod" ? "COD" : 
+                po === "online" ? "Online" : 
+                po === "upi" ? "UPI" : 
                 "Card"
               ).join(', ')}
             </span>
           )}
         </div>
       )}
-
+      
       {/* Search result info */}
       {searchQuery && (
         <div className="mb-4">
@@ -234,7 +459,7 @@ const Products = ({
           </p>
         </div>
       )}
-
+      
       {/* Category info */}
       {category && category !== 'all' && (
         <div className="mb-4">
@@ -243,45 +468,21 @@ const Products = ({
           </p>
         </div>
       )}
-
+      
       {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product, index) => (
-            <div key={index} className="border p-4 rounded-lg shadow-lg">
-              <img
-                src={product.image || "https://via.placeholder.com/150"}
-                alt={product.name}
-                className="w-full h-40 object-cover rounded-md"
-              />
-              <h3 className="text-lg font-semibold mt-2">{product.name}</h3>
-              <p className="text-green-600 font-bold mt-2">₹{product.price}</p>
-              {product.location && <p className="text-gray-500 text-sm">Location: {product.location}</p>}
-              {product.category && <p className="text-gray-500 text-sm">Category: {product.category}</p>}
-              {product.rating && (
-                <div className="flex mt-1">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}>
-                      ★
-                    </span>
-                  ))}
-                  <span className="ml-1 text-sm">({product.rating})</span>
-                </div>
-              )}
-              {product.estimatedDelivery && (
-                <p className="text-gray-500 text-sm">Delivery in: {product.estimatedDelivery}</p>
-              )}
-              <button
-                onClick={() => addToCart(product)}
-                className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                disabled={!effectiveUserId}
-              >
-                {effectiveUserId ? "Add to Cart" : "Login to Add"}
-              </button>
-            </div>
+            <ProductCard
+              key={product._id || index}
+              product={product}
+              effectiveUserId={effectiveUserId}
+              addToCart={addToCart}
+              setActiveCategory={handleCategoryChange}
+            />
           ))
         ) : (
-          <div className="col-span-3 text-center py-10">
+          <div className="col-span-full text-center py-10">
             <p className="text-lg text-gray-500">No products match your current criteria.</p>
             <p className="text-sm text-gray-400">Try adjusting your filters or search terms.</p>
           </div>
