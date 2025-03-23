@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Products from './Products';
 import SidebarFilter from '../components/SidebarFilter';
 import ProductHeader from '../components/ProductHeader';
+import Categories from '../components/Categories';
 
 const ProductsPage = ({ userId }) => {
   const [filters, setFilters] = useState({
@@ -12,9 +13,11 @@ const ProductsPage = ({ userId }) => {
     deliveryTime: [],
     paymentOptions: []
   });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('popular');
   const [cart, setCart] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Get cart from localStorage or another source
   useEffect(() => {
@@ -44,12 +47,17 @@ const ProductsPage = ({ userId }) => {
     setSortOption(option);
   };
 
+  // Handler for category changes
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Main content */}
       <div className="flex flex-1">
         {/* Sidebar Filter */}
-        <div className="w-1/4 ">
+        <div className="w-1/4">
           <SidebarFilter onFilterChange={handleFilterChange} />
         </div>
         {/* Main Content Area */}
@@ -60,6 +68,8 @@ const ProductsPage = ({ userId }) => {
             onSort={handleSort}
             cartItemCount={cart.length}
           />
+          {/* Categories Component - Added below ProductHeader */}
+          <Categories onCategoryChange={handleCategoryChange} />
           {/* Products */}
           <div className="flex-1 overflow-auto">
             <Products
@@ -68,6 +78,7 @@ const ProductsPage = ({ userId }) => {
               searchQuery={searchQuery}
               sortOption={sortOption}
               setCart={setCart}
+              category={selectedCategory}
             />
           </div>
         </div>

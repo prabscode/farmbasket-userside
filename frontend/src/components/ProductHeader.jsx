@@ -57,9 +57,9 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
   };
 
   return (
-    <div className="bg-white w-full">
+    <div className="bg-white w-full ">
       <div className="w-full">
-        <main className="w-full px-4 sm:px-6 lg:px-8">
+        <main className="w-full px-4  sm:px-6 lg:px-8">
           <div className="flex items-center justify-between border-b border-gray-200 pt-3 pb-3 w-full">
             <div className="w-full max-w-lg min-w-[300px]">
               <form onSubmit={handleSearch} className="relative">

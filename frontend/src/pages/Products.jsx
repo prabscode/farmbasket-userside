@@ -2,7 +2,13 @@
 import { useEffect, useState } from "react";
 import Cart from "../components/Cart";
 
-const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOption = 'popular' }) => {
+const Products = ({ 
+  userId: propUserId, 
+  filters = {}, 
+  searchQuery = '', 
+  sortOption = 'popular',
+  category = 'all' 
+}) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -26,20 +32,28 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
     setLocalUserId(storedUserId);
   }, [propUserId]); // Re-check when prop userId changes
 
-  // Apply filters, search, and sort when they change
+  // Apply filters, search, sort, and category when they change
   useEffect(() => {
     if (products.length === 0) return;
     
     // Start with all products
     let result = [...products];
     
+    // Apply category filter
+    if (category && category !== 'all') {
+      result = result.filter(product => 
+        product.category && 
+        product.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+
     // Enhanced search filter to search through all properties
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(product => {
         // Convert product to string for easy searching across all fields
         const productStr = JSON.stringify(product).toLowerCase();
-        return productStr.includes(query) || 
+        return productStr.includes(query) ||
           // Explicit checks for common fields
           (product.name && product.name.toLowerCase().includes(query)) ||
           (product.description && product.description.toLowerCase().includes(query)) ||
@@ -49,7 +63,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
           (product.price !== undefined && product.price.toString().includes(query));
       });
     }
-    
+
     // Apply location filter
     if (filters.location) {
       result = result.filter(product =>
@@ -121,20 +135,20 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
           break;
       }
     }
-    
+
     setFilteredProducts(result);
-  }, [filters, products, searchQuery, sortOption]);
+  }, [filters, products, searchQuery, sortOption, category]);
 
   // Determine the effective userId to use
   const effectiveUserId = propUserId || localUserId;
-  
+
   // Function to add product to cart
   const addToCart = (product) => {
     if (!effectiveUserId) {
       alert("Please log in to add items to cart");
       return;
     }
-    
+
     const cartItem = {
       userId: effectiveUserId,
       farmerId: product.farmerId,
@@ -144,11 +158,11 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
       image: product.image,
       quantity: 1, // Add quantity for cart functionality
     };
-    
+
     console.log("Adding to cart with userId:", effectiveUserId);
     setCart((prevCart) => [...prevCart, cartItem]);
   };
-  
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
@@ -159,6 +173,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
         <p>Cart Items: {cart.length}</p>
         <p>Search Query: {searchQuery || "None"}</p>
         <p>Sort Option: {sortOption}</p>
+        <p>Active Category: {category}</p>
         <p>Active Filters: {Object.entries(filters)
           .filter(([key, value]) =>
             (Array.isArray(value) && value.length > 0) ||
@@ -167,7 +182,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
           .map(([key]) => key)
           .join(', ') || 'None'}</p>
       </div>
-      
+
       {/* Filter Tags */}
       {Object.entries(filters).some(([key, value]) =>
         (Array.isArray(value) && value.length > 0) ||
@@ -210,7 +225,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
           )}
         </div>
       )}
-      
+
       {/* Search result info */}
       {searchQuery && (
         <div className="mb-4">
@@ -219,7 +234,16 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
           </p>
         </div>
       )}
-      
+
+      {/* Category info */}
+      {category && category !== 'all' && (
+        <div className="mb-4">
+          <p className="text-gray-600">
+            Category: <span className="font-semibold capitalize">{category}</span>
+          </p>
+        </div>
+      )}
+
       {/* Product Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {filteredProducts.length > 0 ? (
@@ -233,6 +257,7 @@ const Products = ({ userId: propUserId, filters = {}, searchQuery = '', sortOpti
               <h3 className="text-lg font-semibold mt-2">{product.name}</h3>
               <p className="text-green-600 font-bold mt-2">₹{product.price}</p>
               {product.location && <p className="text-gray-500 text-sm">Location: {product.location}</p>}
+              {product.category && <p className="text-gray-500 text-sm">Category: {product.category}</p>}
               {product.rating && (
                 <div className="flex mt-1">
                   {[...Array(5)].map((_, i) => (
