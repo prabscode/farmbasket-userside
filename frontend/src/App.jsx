@@ -6,7 +6,7 @@ import Products from './pages/Products'
 import ProductsPage from './pages/Productspage.jsx'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
-
+import CartPage from './pages/CartPage';
 function App() {
   const { isAuthenticated, user } = useAuth0();
   const [userId, setUserId] = useState(null);
@@ -32,7 +32,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<ProductsPage userId={userId} />} />
           <Route path="/bundles" element={<div>Bundles Page</div>} />
-          <Route path="/cart" element={<div>Cart Page</div>} />
+          <Route path="/cart" element={<CartPage />} />
         </Routes>
       </BrowserRouter>
     </>

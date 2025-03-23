@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Cart from "../components/Cart";
 import { MapPin, Heart, Share, User } from "lucide-react";
 
 // ProductCard Component
@@ -178,7 +177,6 @@ const Products = ({
               farmerData.works.forEach(workItem => {
                 // Add a unique _id to each product if it doesn't have one
                 const productId = workItem._id || `${farmerData._id}-${workItem.cropName}-${Math.random().toString(36).substr(2, 9)}`;
-                
                 allProducts.push({
                   ...workItem,
                   _id: productId, // Ensure each product has a unique ID
@@ -213,14 +211,15 @@ const Products = ({
         setLoading(false);
       });
   }, []);
-  
+
   // Get userId from localStorage if not passed as prop
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     console.log("Products component - userId from localStorage:", storedUserId);
+
     setLocalUserId(storedUserId);
   }, [propUserId]);
-  
+
   // Apply filters, search, sort, and category when they change
   useEffect(() => {
     if (products.length === 0) return;
@@ -232,6 +231,7 @@ const Products = ({
     });
     // Start with all products
     let result = [...products];
+    
     // Apply category filter
     if (category && category !== 'all') {
       result = result.filter(product =>
@@ -239,6 +239,7 @@ const Products = ({
         product.category.toLowerCase() === category.toLowerCase()
       );
     }
+    
     // Enhanced search filter to search through all properties
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -256,12 +257,14 @@ const Products = ({
           (product.price !== undefined && product.price.toString().includes(query));
       });
     }
+    
     // Apply location filter
     if (filters.location) {
       result = result.filter(product =>
         product.location && product.location.includes(filters.location)
       );
     }
+    
     // Apply price range filter
     if (filters.priceRange && filters.priceRange.length === 2) {
       const [min, max] = filters.priceRange;
@@ -269,6 +272,7 @@ const Products = ({
         product.price >= min && product.price <= max
       );
     }
+    
     // Apply customer rating filter
     if (filters.customerRating && filters.customerRating.length > 0) {
       const minRating = Math.min(...filters.customerRating);
@@ -276,6 +280,7 @@ const Products = ({
         product.rating >= minRating
       );
     }
+    
     // Apply delivery time filter
     if (filters.deliveryTime && filters.deliveryTime.length > 0) {
       result = result.filter(product => {
@@ -290,6 +295,7 @@ const Products = ({
         );
       });
     }
+    
     // Apply payment options filter
     if (filters.paymentOptions && filters.paymentOptions.length > 0) {
       result = result.filter(product =>
@@ -298,6 +304,7 @@ const Products = ({
         )
       );
     }
+    
     // Apply sorting
     if (sortOption) {
       switch (sortOption) {
@@ -322,13 +329,14 @@ const Products = ({
           break;
       }
     }
+    
     console.log("Filtered products count:", result.length);
     setFilteredProducts(result);
   }, [filters, products, searchQuery, sortOption, category]);
-  
+
   // Determine the effective userId to use
   const effectiveUserId = propUserId || localUserId;
-  
+
   // Function to add product to cart
   const addToCart = (product) => {
     if (!effectiveUserId) {
@@ -351,16 +359,27 @@ const Products = ({
       image: product.image,
       quantity: 1, // Add quantity for cart functionality
     };
+    
     console.log("Adding to cart:", cartItem);
-    setCart((prevCart) => [...prevCart, cartItem]);
+    
+    // Update local state
+    const updatedCart = [...cart, cartItem];
+    setCart(updatedCart);
+    
+    // Store in localStorage for persistence
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
-  
+
   // Function to remove product from cart
   const removeFromCart = (product) => {
     console.log("Removing from cart, product ID:", product._id);
-    setCart((prevCart) => prevCart.filter(item => item.productId !== product._id));
+    const updatedCart = cart.filter(item => item.productId !== product._id);
+    setCart(updatedCart);
+    
+    // Update localStorage
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
-  
+
   // Handle category change
   const handleCategoryChange = (newCategory) => {
     console.log("Setting active category:", newCategory);
@@ -385,15 +404,7 @@ const Products = ({
     // But for now, we'll just log it
     console.log("Category mapped to:", standardCategoryId);
   };
-  
-  // Debug function to log cart contents
-  const logCart = () => {
-    console.log("Current cart contents:", cart);
-    cart.forEach((item, index) => {
-      console.log(`Cart item ${index}:`, item.productId);
-    });
-  };
-  
+
   // Loading state
   if (loading) {
     return (
@@ -406,7 +417,7 @@ const Products = ({
       </div>
     );
   }
-  
+
   // Error state
   if (error) {
     return (
@@ -425,10 +436,11 @@ const Products = ({
       </div>
     );
   }
-  
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
+      
       {/* Debug info - Remove in production */}
       <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
         <p>User ID: {effectiveUserId || "Not logged in"}</p>
@@ -445,12 +457,6 @@ const Products = ({
           )
           .map(([key]) => key)
           .join(', ') || 'None'}</p>
-        <button 
-          onClick={logCart} 
-          className="mt-2 px-2 py-1 bg-gray-200 rounded text-xs"
-        >
-          Log Cart Contents
-        </button>
       </div>
       
       {/* Filter Tags */}
@@ -536,8 +542,7 @@ const Products = ({
         )}
       </div>
       
-      {/* Cart Component */}
-      <Cart cart={cart} userId={effectiveUserId} />
+      {/* Cart Component has been removed from here */}
     </div>
   );
 };

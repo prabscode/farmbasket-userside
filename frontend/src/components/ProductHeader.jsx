@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const sortOptions = [
   { name: 'Most Popular', value: 'popular', current: true },
@@ -18,7 +18,7 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOptionsState, setSortOptionsState] = useState(sortOptions);
   const [showSortOptions, setShowSortOptions] = useState(false);
-  
+
   // Add useEffect to trigger search when typing
   useEffect(() => {
     // This triggers the search as you type
@@ -55,12 +55,19 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
     onSort(selectedName.toLowerCase().replace(/ /g, '_'));
     setShowSortOptions(false);
   };
+  
+  // Handle cart button click - navigate to cart page
+  const handleCartClick = () => {
+    if (cartItemCount > 0) {
+      navigate('/cart');
+    }
+  };
 
   return (
-<div className="bg-white w-full shadow-md">
-  <div className="w-full">
-    <main className="w-full px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between border-b border-gray-200 pt-4 pb-6 w-full">
+    <div className="bg-white w-full shadow-md">
+      <div className="w-full">
+        <main className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between border-b border-gray-200 pt-4 pb-6 w-full">
             <div className="w-full max-w-lg min-w-[300px] ml-50">
               <form onSubmit={handleSearch} className="relative">
                 <input
@@ -131,7 +138,7 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
                   type="button"
                   className={`px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 focus:outline-none flex items-center ${cartItemCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                   aria-label="Shopping Cart"
-                  onClick={() => cartItemCount > 0 && navigate('/cart')}
+                  onClick={handleCartClick}
                   disabled={cartItemCount === 0}
                 >
                   {/* Shopping Cart SVG */}
