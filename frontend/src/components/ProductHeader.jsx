@@ -57,11 +57,11 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
   };
 
   return (
-    <div className="bg-white w-full ">
-      <div className="w-full">
-        <main className="w-full px-4  sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between border-b border-gray-200 pt-3 pb-3 w-full">
-            <div className="w-full max-w-lg min-w-[300px]">
+<div className="bg-white w-full shadow-md">
+  <div className="w-full">
+    <main className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between border-b border-gray-200 pt-4 pb-6 w-full">
+            <div className="w-full max-w-lg min-w-[300px] ml-50">
               <form onSubmit={handleSearch} className="relative">
                 <input
                   className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-base border border-slate-200 rounded-md pl-3 pr-28 py-2.5 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
@@ -98,7 +98,7 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
                 <div>
                   <button
                     onClick={() => setShowSortOptions(!showSortOptions)}
-                    className="group inline-flex justify-center text-sm font-medium bg-gray-800 px-4 py-2 rounded-md text-white hover:bg-gray-700 focus:outline-none"
+                    className="group inline-flex justify-center text-sm font-medium bg-gray-800 px-4 py-2 mr-14 rounded-md text-white hover:bg-gray-700 focus:outline-none"
                   >
                     Sort
                     <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -126,7 +126,7 @@ const ProductHeader = ({ onSearch, onSort, cartItemCount = 0 }) => {
                 )}
               </div>
               {/* Cart Button */}
-              <div className="relative ml-4">
+              <div className="relative mr-4">
                 <button
                   type="button"
                   className={`px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 focus:outline-none flex items-center ${cartItemCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}

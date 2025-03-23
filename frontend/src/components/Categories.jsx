@@ -35,7 +35,7 @@ const Categories = ({ onCategoryChange }) => {
                 flex items-center rounded-full px-5 py-2 text-sm font-medium transition-all duration-200
                 ${activeCategory === category.id 
                   ? 'bg-gray-900 text-white shadow-md hover:bg-gray-600  ' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-400'}
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-400 shadow-md hover:shadow-lg'}
                  focus:outline-none  border border-solid border-gray-900
               `}
             >

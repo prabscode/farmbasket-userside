@@ -52,39 +52,40 @@ const ProductsPage = ({ userId }) => {
     setSelectedCategory(categoryId);
   };
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      {/* Main content */}
-      <div className="flex flex-1">
-        {/* Sidebar Filter */}
-        <div className="w-1/4">
-          <SidebarFilter onFilterChange={handleFilterChange} />
-        </div>
-        {/* Main Content Area */}
-        <div className="w-3/4 flex flex-col">
-          {/* Product Header positioned correctly */}
-          <ProductHeader
-            onSearch={handleSearch}
-            onSort={handleSort}
-            cartItemCount={cart.length}
-          />
-          {/* Categories Component - Added below ProductHeader */}
-          <Categories onCategoryChange={handleCategoryChange} />
-          {/* Products */}
-          <div className="flex-1 overflow-auto">
-            <Products
-              userId={userId}
-              filters={filters}
-              searchQuery={searchQuery}
-              sortOption={sortOption}
-              setCart={setCart}
-              category={selectedCategory}
-            />
-          </div>
-        </div>
+// pages/ProductsPage.jsx
+return (
+  <div className="flex min-h-screen mt-4">
+    {/* Sidebar Filter */}
+    <div className="w-1/5">
+      <SidebarFilter onFilterChange={handleFilterChange} />
+    </div>
+    
+    {/* Main Content Area */}
+    <div className="w-4/5 flex flex-col">
+      {/* Product Header positioned at the top of right column */}
+      <ProductHeader
+        onSearch={handleSearch}
+        onSort={handleSort}
+        cartItemCount={cart.length}
+      />
+      
+      {/* Categories Component - below ProductHeader */}
+      <Categories onCategoryChange={handleCategoryChange} />
+      
+      {/* Products Grid */}
+      <div className="flex-1 overflow-auto">
+        <Products
+          userId={userId}
+          filters={filters}
+          searchQuery={searchQuery}
+          sortOption={sortOption}
+          setCart={setCart}
+          category={selectedCategory}
+        />
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default ProductsPage;
