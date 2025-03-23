@@ -3,7 +3,6 @@ import React from 'react';
 const Info = ({ cart, calculateTotal, onRemoveItem }) => {
   // Define shipping price as a constant
   const SHIPPING_PRICE = 40.00;
-  
   // Calculate the final total with shipping
   const subtotal = calculateTotal();
   const finalTotal = subtotal + SHIPPING_PRICE;
@@ -30,7 +29,7 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Order items */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center mb-4">
@@ -40,14 +39,13 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
         <div className="space-y-4">
           {cart.map((item) => (
             <div key={item.productId} className="relative border-t border-gray-200 pt-4">
-{/* Close button */}
-<button
-  onClick={() => onRemoveItem(item.productId)}
-  className="absolute top-2 right-0 w-6 h-6  flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
->
-  ×
-</button>
-              
+              {/* Close button */}
+              <button
+                onClick={() => onRemoveItem(item.productId)}
+                className="absolute top-2 right-0 w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
+              >
+                ×
+              </button>
               <div className="flex items-start pr-6">
                 {/* Product Image */}
                 <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
@@ -63,7 +61,6 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
                     </div>
                   )}
                 </div>
-                
                 {/* Product Details */}
                 <div className="ml-3 flex-grow">
                   <h3 className="font-medium text-gray-800">{item.name}</h3>
@@ -79,9 +76,8 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
                     Farmer ID: {item.farmerId || "Unknown"}
                   </p>
                 </div>
-                
                 {/* Price */}
-                <div className="mt-12 ml-4 flex-shrink-0">
+                <div className=" absolute  right-1 top-6 mt-12 ml-4 flex-shrink-0">
                   <span className="inline-block bg-gray-900 text-white rounded-sm px-2 py-1 text-xs font-medium">
                     ₹{((item.price * (item.quantity || 1))).toFixed(2)}
                   </span>
@@ -91,7 +87,7 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
           ))}
         </div>
       </div>
-      
+
       {/* Perks section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
         <h3 className="text-center text-gray-700 font-medium mb-6">The perks of every order</h3>
@@ -110,7 +106,7 @@ const Info = ({ cart, calculateTotal, onRemoveItem }) => {
           </div>
           <div className="flex flex-col items-center">
             <div className="w-8 h-8 flex items-center justify-center mb-2">
-              <span className="text-xl">🛡️</span>
+              <span className="text-xl">🛡</span>
             </div>
             <span className="text-xs text-gray-500 text-center">Trusted Sellers</span>
           </div>

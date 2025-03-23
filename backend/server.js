@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
- 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -21,7 +21,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Routes
 app.use("/api/products", require("./routes/Products"));
 app.use("/api/orders", require("./routes/OrderRoutes"));
-app.use("/api/users", require("./routes/UserRoutes") ); // Only mount once
+app.use("/api/users", require("./routes/UserRoutes"));
+app.use("/api/addresses", require("./routes/AddressRoutes")); // Add the new address routes
 
 // Basic route for testing
 app.get('/', (req, res) => {

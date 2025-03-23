@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Info from "../components/Info"; // Import the Info component
+import Info from "../components/Info";
+import AddressForm from "../components/AddressForm";
+import Review from "../components/Review";
 
 const CartPage = () => {
   const [cart, setCart] = useState([]);
+  const [currentStep, setCurrentStep] = useState("address"); // "address" or "review"
+  const [showAddressForm, setShowAddressForm] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
     name: "",
@@ -57,6 +61,26 @@ const CartPage = () => {
     const updatedCart = cart.filter(item => item.productId !== productId);
     setCart(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+  };
+
+  // Handle proceed to checkout
+  const handleProceedToCheckout = () => {
+    if (!userId) {
+      alert("Please log in to proceed to checkout");
+      return;
+    }
+    setShowAddressForm(true);
+    setCurrentStep("address");
+  };
+
+  // Handle address saved and move to review step
+  const handleAddressSaved = () => {
+    setCurrentStep("review");
+  };
+
+  // Handle going back to address form
+  const handleBackToAddress = () => {
+    setCurrentStep("address");
   };
 
   // Handle form submission
@@ -136,229 +160,56 @@ const CartPage = () => {
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
       
-      {/* Main content with two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left side - Cart items and checkout button */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Cart Items ({cart.length})</h2>
-              {/* Table header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 mb-4 text-gray-600 border-b pb-2">
-                <div className="col-span-6">Product</div>
-                <div className="col-span-2 text-center">Price</div>
-                <div className="col-span-2 text-center">Quantity</div>
-                <div className="col-span-2 text-right">Total</div>
-              </div>
-              
-              {/* Cart items */}
-              {cart.map((item) => (
-                <div key={item.productId} className="grid grid-cols-1 md:grid-cols-12 gap-4 py-4 border-b">
-                  {/* Product info */}
-                  <div className="col-span-1 md:col-span-6 flex items-center">
-                    <div className="w-16 h-16 mr-4 flex-shrink-0 bg-gray-200 rounded-md overflow-hidden">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-500">
-                          No image
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-800">{item.name}</h3>
-                      <button
-                        onClick={() => handleRemoveItem(item.productId)}
-                        className="text-red-500 text-sm mt-1 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Price */}
-                  <div className="col-span-1 md:col-span-2 flex md:justify-center items-center">
-                    <div className="md:hidden text-gray-600 mr-2">Price:</div>
-                    <div>₹{item.price.toFixed(2)}</div>
-                  </div>
-                  
-                  {/* Quantity */}
-                  <div className="col-span-1 md:col-span-2 flex md:justify-center items-center">
-                    <div className="md:hidden text-gray-600 mr-2">Quantity:</div>
-                    <div className="flex items-center border rounded-md">
-                      <button
-                        onClick={() => handleQuantityChange(item.productId, (item.quantity || 1) - 1)}
-                        className="px-3 py-1 bg-gray-100 border-r hover:bg-gray-200"
-                      >
-                        -
-                      </button>
-                      <span className="px-3 py-1">{item.quantity || 1}</span>
-                      <button
-                        onClick={() => handleQuantityChange(item.productId, (item.quantity || 1) + 1)}
-                        className="px-3 py-1 bg-gray-100 border-l hover:bg-gray-200"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Total */}
-                  <div className="col-span-1 md:col-span-2 flex md:justify-end items-center">
-                    <div className="md:hidden text-gray-600 mr-2">Total:</div>
-                    <div className="font-medium">₹{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Checkout buttons */}
-              <div className="mt-8 flex flex-col md:flex-row md:justify-between md:items-center">
-                <button
-                  onClick={handleContinueShopping}
-                  className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50 mb-4 md:mb-0"
-                >
-                  Continue Shopping
-                </button>
-                <button
-                  onClick={() => setIsCheckoutOpen(true)}
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Proceed to Checkout
-                </button>
-              </div>
-            </div>
+      {/* Steps indicator */}
+      <div className="flex items-center justify-center mb-8">
+        <div className={`flex items-center ${currentStep === "address" ? "text-green-500" : "text-gray-500"}`}>
+          <div className={`rounded-full h-8 w-8 flex items-center justify-center ${currentStep === "address" ? "bg-green-500 text-white" : "bg-gray-200"}`}>
+            1
           </div>
+          <span className="ml-2">Shipping address</span>
+        </div>
+        <div className="mx-4 h-1 w-16 bg-gray-200"></div>
+        <div className={`flex items-center ${currentStep === "review" ? "text-green-500" : "text-gray-500"}`}>
+          <div className={`rounded-full h-8 w-8 flex items-center justify-center ${currentStep === "review" ? "bg-green-500 text-white" : "bg-gray-200"}`}>
+            2
+          </div>
+          <span className="ml-2">Review your order</span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left side - Show either AddressForm or Review component */}
+        <div className="lg:col-span-2">
+          {currentStep === "address" ? (
+            <AddressForm
+              cartProducts={cart.map(item => ({
+                id: item.productId,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity || 1
+              }))}
+              onQuantityChange={handleQuantityChange}
+              onAddressSaved={handleAddressSaved}
+            />
+          ) : (
+            <Review
+              cartProducts={cart}
+              onPrevStep={handleBackToAddress}
+              userId={userId}
+            />
+          )}
         </div>
         
         {/* Right side - Order summary (Info component) */}
         <div className="lg:col-span-1">
-          <Info 
-            cart={cart} 
-            calculateTotal={calculateTotal} 
-            onRemoveItem={handleRemoveItem} 
+          <Info
+            cart={cart}
+            calculateTotal={calculateTotal}
+            onRemoveItem={handleRemoveItem}
           />
         </div>
       </div>
-
-      {/* Checkout Form */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full max-h-screen overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Checkout</h2>
-            <form onSubmit={handleCheckout}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="name">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="w-full p-2 border rounded-md"
-                  value={orderDetails.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="address">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  className="w-full p-2 border rounded-md"
-                  value={orderDetails.address}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="city">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    className="w-full p-2 border rounded-md"
-                    value={orderDetails.city}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="state">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    className="w-full p-2 border rounded-md"
-                    value={orderDetails.state}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="zipcode">
-                    Zip Code
-                  </label>
-                  <input
-                    type="text"
-                    id="zipcode"
-                    name="zipcode"
-                    className="w-full p-2 border rounded-md"
-                    value={orderDetails.zipcode}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="phone">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    className="w-full p-2 border rounded-md"
-                    value={orderDetails.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Order Summary</h3>
-                <div className="flex justify-between border-t pt-2">
-                  <span>Total ({cart.length} items):</span>
-                  <span className="font-bold">₹{calculateTotal().toFixed(2)}</span>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setIsCheckoutOpen(false)}
-                  className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Place Order
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
