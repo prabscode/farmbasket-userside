@@ -1,42 +1,53 @@
-// pages/Products.jsx
 import { useEffect, useState } from "react";
 import Cart from "../components/Cart";
 import { MapPin, Heart, Share, User } from "lucide-react";
 
 // ProductCard Component
-const ProductCard = ({ product, effectiveUserId, addToCart, setActiveCategory }) => {
+const ProductCard = ({ product, effectiveUserId, addToCart, removeFromCart, cart, setActiveCategory }) => {
   const [isLiked, setIsLiked] = useState(false);
+  
+  // Check if THIS specific product is in cart by comparing product ID
+  const isInCart = cart.some(item => item.productId === product._id);
   
   const handleLikeClick = (e) => {
     e.stopPropagation();
     setIsLiked(!isLiked);
   };
-
+  
   const handleShareClick = (e) => {
     e.stopPropagation();
     console.log("Sharing product:", product.name);
   };
-
+  
   const handleFarmerProfileClick = (e) => {
     e.stopPropagation();
     console.log("Opening farmer profile for:", product.farmerName, "with ID:", product.farmerId);
     window.open(`/farmer-profile/${product.farmerId}`, "_blank");
   };
-
+  
   const handleCategoryClick = (e) => {
     e.stopPropagation();
     if (setActiveCategory && product.category) {
       setActiveCategory(product.category);
     }
   };
-
+  
+  // Handle cart button click for this specific product
+  const handleCartButtonClick = () => {
+    if (isInCart) {
+      removeFromCart(product);
+    } else {
+      addToCart(product);
+    }
+  };
+  
   return (
     <div className="flex flex-col bg-gray-50 rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
       {/* Header - Crop Name with dark background */}
       <div className="p-3 border-b border-gray-100 bg-gray-900 flex justify-between items-center">
         <h3 className="font-bold text-white truncate">{product.cropName || product.name}</h3>
       </div>
-      
+
       {/* Product Image */}
       <div className="relative w-full h-52 bg-gray-200 flex items-center justify-center p-3">
         <div className="relative w-full h-full overflow-hidden border border-gray-900 rounded-lg p-1">
@@ -86,7 +97,7 @@ const ProductCard = ({ product, effectiveUserId, addToCart, setActiveCategory })
           </button>
         </div>
         
-        {/* Category Button */}
+        {/* Category Button - Now linked with category component */}
         <span
           onClick={handleCategoryClick}
           className="inline-block bg-gradient-to-r from-gray-300 to-gray-300 rounded-full px-3 py-1 text-sm font-medium text-gray-900 mb-3 w-fit cursor-pointer hover:from-gray-400 hover:to-gray-400 transition-all duration-300"
@@ -104,6 +115,9 @@ const ProductCard = ({ product, effectiveUserId, addToCart, setActiveCategory })
         <div className="text-gray-600 text-sm space-y-2 mb-4">
           <p>Stock: {product.stock || 0}</p>
           <p>Estimated Delivery: {product.estimatedDeliveryTime || "Unknown"}</p>
+          {/* Added Product and Farmer IDs */}
+          <p>Product ID: {product._id || "N/A"}</p>
+          <p>Farmer ID: {product.farmerId || "N/A"}</p>
         </div>
         
         {/* Price and Add to Cart Button */}
@@ -113,11 +127,11 @@ const ProductCard = ({ product, effectiveUserId, addToCart, setActiveCategory })
             <span className="text-2xl font-semibold ml-0.5">{product.price}</span>
           </div>
           <button
-            onClick={() => addToCart(product)}
-            className={`px-4 py-1.5 bg-blue-900 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow text-sm`}
+            onClick={handleCartButtonClick}
+            className={`px-4 py-1.5 ${isInCart ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-900 hover:bg-blue-700'} text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow text-sm`}
             disabled={!effectiveUserId}
           >
-            {effectiveUserId ? "Add to Cart" : "Login to Add"}
+            {!effectiveUserId ? "Login to Add" : isInCart ? "Remove" : "Add to Cart"}
           </button>
         </div>
       </div>
@@ -141,13 +155,10 @@ const Products = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-
-
   // Fetch products on component mount
   useEffect(() => {
     setLoading(true);
     console.log("Fetching products...");
-    
     fetch("http://localhost:5000/api/products")
       .then((res) => {
         if (!res.ok) {
@@ -157,18 +168,20 @@ const Products = ({
       })
       .then((data) => {
         console.log("API Response:", data);
-        
         // Handle direct array of products
         if (Array.isArray(data)) {
           // If the API returns an array of farmer objects with works arrays
           let allProducts = [];
-          
           data.forEach(farmerData => {
             if (farmerData.works && Array.isArray(farmerData.works)) {
               // Extract each work item as a product with farmer info
               farmerData.works.forEach(workItem => {
+                // Add a unique _id to each product if it doesn't have one
+                const productId = workItem._id || `${farmerData._id}-${workItem.cropName}-${Math.random().toString(36).substr(2, 9)}`;
+                
                 allProducts.push({
                   ...workItem,
+                  _id: productId, // Ensure each product has a unique ID
                   farmerName: farmerData.farmerName,
                   farmerId: farmerData._id,
                   phoneNumber: farmerData.phoneNumber,
@@ -179,10 +192,12 @@ const Products = ({
               });
             } else {
               // If it's a direct product object
-              allProducts.push(farmerData);
+              allProducts.push({
+                ...farmerData,
+                _id: farmerData._id || `product-${Math.random().toString(36).substr(2, 9)}`
+              });
             }
           });
-          
           console.log("Transformed products:", allProducts);
           setProducts(allProducts);
           setFilteredProducts(allProducts);
@@ -190,7 +205,6 @@ const Products = ({
           console.error("Unexpected API response format:", data);
           setError("Unexpected data format from API");
         }
-        
         setLoading(false);
       })
       .catch((err) => {
@@ -199,28 +213,25 @@ const Products = ({
         setLoading(false);
       });
   }, []);
-
+  
   // Get userId from localStorage if not passed as prop
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     console.log("Products component - userId from localStorage:", storedUserId);
     setLocalUserId(storedUserId);
   }, [propUserId]);
-
+  
   // Apply filters, search, sort, and category when they change
   useEffect(() => {
     if (products.length === 0) return;
-    
-    console.log("Filtering products with:", { 
-      category, 
-      searchQuery, 
-      filters, 
-      sortOption 
+    console.log("Filtering products with:", {
+      category,
+      searchQuery,
+      filters,
+      sortOption
     });
-    
     // Start with all products
     let result = [...products];
-    
     // Apply category filter
     if (category && category !== 'all') {
       result = result.filter(product =>
@@ -228,7 +239,6 @@ const Products = ({
         product.category.toLowerCase() === category.toLowerCase()
       );
     }
-    
     // Enhanced search filter to search through all properties
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -246,14 +256,12 @@ const Products = ({
           (product.price !== undefined && product.price.toString().includes(query));
       });
     }
-    
     // Apply location filter
     if (filters.location) {
       result = result.filter(product =>
         product.location && product.location.includes(filters.location)
       );
     }
-    
     // Apply price range filter
     if (filters.priceRange && filters.priceRange.length === 2) {
       const [min, max] = filters.priceRange;
@@ -261,7 +269,6 @@ const Products = ({
         product.price >= min && product.price <= max
       );
     }
-    
     // Apply customer rating filter
     if (filters.customerRating && filters.customerRating.length > 0) {
       const minRating = Math.min(...filters.customerRating);
@@ -269,7 +276,6 @@ const Products = ({
         product.rating >= minRating
       );
     }
-    
     // Apply delivery time filter
     if (filters.deliveryTime && filters.deliveryTime.length > 0) {
       result = result.filter(product => {
@@ -284,7 +290,6 @@ const Products = ({
         );
       });
     }
-    
     // Apply payment options filter
     if (filters.paymentOptions && filters.paymentOptions.length > 0) {
       result = result.filter(product =>
@@ -293,7 +298,6 @@ const Products = ({
         )
       );
     }
-    
     // Apply sorting
     if (sortOption) {
       switch (sortOption) {
@@ -318,14 +322,13 @@ const Products = ({
           break;
       }
     }
-    
     console.log("Filtered products count:", result.length);
     setFilteredProducts(result);
   }, [filters, products, searchQuery, sortOption, category]);
-
+  
   // Determine the effective userId to use
   const effectiveUserId = propUserId || localUserId;
-
+  
   // Function to add product to cart
   const addToCart = (product) => {
     if (!effectiveUserId) {
@@ -333,25 +336,64 @@ const Products = ({
       return;
     }
     
+    // Check if the product is already in the cart
+    if (cart.some(item => item.productId === product._id)) {
+      console.log("Product already in cart, not adding again");
+      return;
+    }
+    
     const cartItem = {
       userId: effectiveUserId,
       farmerId: product.farmerId,
-      productId: product._id, 
+      productId: product._id,
       name: product.cropName || product.name,
       price: product.price,
       image: product.image,
       quantity: 1, // Add quantity for cart functionality
     };
-    
     console.log("Adding to cart:", cartItem);
     setCart((prevCart) => [...prevCart, cartItem]);
   };
-
+  
+  // Function to remove product from cart
+  const removeFromCart = (product) => {
+    console.log("Removing from cart, product ID:", product._id);
+    setCart((prevCart) => prevCart.filter(item => item.productId !== product._id));
+  };
+  
   // Handle category change
   const handleCategoryChange = (newCategory) => {
+    console.log("Setting active category:", newCategory);
     setActiveCategory(newCategory.toLowerCase());
+    
+    // Find the corresponding category in the Categories component format
+    // This creates a link between the product card category and main category component
+    const categoryMapping = {
+      "grains": "grains",
+      "spices": "spices",
+      "fruits": "fruits",
+      "textiles": "textiles",
+      "pulses": "pulses",
+      "oilseeds": "oilseeds",
+      "other": "other"
+    };
+    
+    // Get the standard category ID or fallback to 'other'
+    const standardCategoryId = categoryMapping[newCategory.toLowerCase()] || "other";
+    
+    // This would typically be passed to a parent component to update the Categories component
+    // But for now, we'll just log it
+    console.log("Category mapped to:", standardCategoryId);
   };
-
+  
+  // Debug function to log cart contents
+  const logCart = () => {
+    console.log("Current cart contents:", cart);
+    cart.forEach((item, index) => {
+      console.log(`Cart item ${index}:`, item.productId);
+    });
+  };
+  
   // Loading state
   if (loading) {
     return (
@@ -364,7 +406,7 @@ const Products = ({
       </div>
     );
   }
-
+  
   // Error state
   if (error) {
     return (
@@ -373,8 +415,8 @@ const Products = ({
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
           >
             Retry
@@ -383,11 +425,10 @@ const Products = ({
       </div>
     );
   }
-
+  
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Available Crops</h2>
-      
       {/* Debug info - Remove in production */}
       <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
         <p>User ID: {effectiveUserId || "Not logged in"}</p>
@@ -398,19 +439,23 @@ const Products = ({
         <p>Sort Option: {sortOption}</p>
         <p>Active Category: {category}</p>
         <p>Active Filters: {Object.entries(filters)
-          .filter(([key, value]) => 
-            (Array.isArray(value) && value.length > 0) || 
+          .filter(([key, value]) =>
+            (Array.isArray(value) && value.length > 0) ||
             (!Array.isArray(value) && value)
           )
           .map(([key]) => key)
           .join(', ') || 'None'}</p>
+        <button 
+          onClick={logCart} 
+          className="mt-2 px-2 py-1 bg-gray-200 rounded text-xs"
+        >
+          Log Cart Contents
+        </button>
       </div>
       
-
-      
       {/* Filter Tags */}
-      {Object.entries(filters).some(([key, value]) => 
-        (Array.isArray(value) && value.length > 0) || 
+      {Object.entries(filters).some(([key, value]) =>
+        (Array.isArray(value) && value.length > 0) ||
         (!Array.isArray(value) && value)
       ) && (
         <div className="flex flex-wrap gap-2 mb-4">
@@ -431,19 +476,19 @@ const Products = ({
           )}
           {filters.deliveryTime && filters.deliveryTime.length > 0 && (
             <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
-              Delivery: {filters.deliveryTime.map(dt => 
-                dt === "next_day" ? "Next Day" : 
-                dt === "2-3_days" ? "2-3 Days" : 
+              Delivery: {filters.deliveryTime.map(dt =>
+                dt === "next_day" ? "Next Day" :
+                dt === "2-3_days" ? "2-3 Days" :
                 "4-7 Days"
               ).join(', ')}
             </span>
           )}
           {filters.paymentOptions && filters.paymentOptions.length > 0 && (
             <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
-              Payment: {filters.paymentOptions.map(po => 
-                po === "cod" ? "COD" : 
-                po === "online" ? "Online" : 
-                po === "upi" ? "UPI" : 
+              Payment: {filters.paymentOptions.map(po =>
+                po === "cod" ? "COD" :
+                po === "online" ? "Online" :
+                po === "upi" ? "UPI" :
                 "Card"
               ).join(', ')}
             </span>
@@ -478,6 +523,8 @@ const Products = ({
               product={product}
               effectiveUserId={effectiveUserId}
               addToCart={addToCart}
+              removeFromCart={removeFromCart}
+              cart={cart}
               setActiveCategory={handleCategoryChange}
             />
           ))
